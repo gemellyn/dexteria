@@ -31,63 +31,77 @@ public class DotLevelManager : MonoBehaviour {
     DotPlayerController dotPlayerController;
     DotManager dotManager;
 
+    public GameDifficultyManager DiffManager;
+    double[] LastDiffVars; //En 0 on a le temps, en 1 on a la courbe
+
+    int points = 0;
     int numLevel = 0;
+
+
 
     // Use this for initialization
     void Awake() {
         dotGenerator = GetComponent<DotAdderAuto>();
         dotPlayerController = GetComponent<DotPlayerController>();
         dotManager = GetComponent<DotManager>();
+        DiffManager.setActivity("BasePlayer", GameDifficultyManager.GDActivityEnum.TRACE);
         numLevel = 0;
+        points = 0;
     }
 
     void Start()
     {
         nextLevel(true, false);
+        LastDiffVars = DiffManager.getDiffParams(0);
     }
 
     void Update()
     {
+        /*
         if (Input.GetButtonDown("Fire2"))
         {
             numLevel += 10;
             nextLevel(false, false);
         }
 
-       /* if (Input.GetButtonDown("Jump"))
+        if (Input.GetButtonDown("Jump"))
         {
             numLevel += 10;
             nextLevel(false, false);
-        }*/
+        }
+        */
     }
 
     public void nextLevel(bool reset, bool win)
     {
+
+        DiffManager.addTry(LastDiffVars, win);
+        numLevel++;
+
         if (win)
         {
-            numLevel += 1;
+            points += 1;
             dotPlayerController.colBase = Color.HSVToRGB(Random.Range(0.0f, 1.0f), 0.9f, 0.9f);
         }
-
+        
         if (reset)
         {
             GameObject.Find("Music").GetComponent<Music>().newMusic();
-            numLevel = 0;
+            points = 0;
         }
-            
-        
+                    
         if (!win)
         {
-            numLevel -= 5;
+            points -= 5;
             GameObject.Find("Music").GetComponent<Music>().newMusic();
         }
-            
 
-        numLevel = Mathf.Max(0, numLevel);
+        LastDiffVars = DiffManager.getDiffParams(numLevel);
 
-        TextLevel.text = ""+numLevel;
+        points = Mathf.Max(0, points);
+
+        TextLevel.text = ""+ points;
               
-
         Debug.Log("Making level " + numLevel);
 
         //On s'en servira un jour :)
@@ -109,10 +123,15 @@ public class DotLevelManager : MonoBehaviour {
         if (win)
             WinSound.Play();
 
-        //Courbe de difficulté rigolote
+        //Selection du temps
+
+        c'est ici qu'on en est !!! 
+
         float tempsEntreDots = Mathf.Lerp(paramDiffVeryEasy.tempsEntreDots, paramDiffInsane.tempsEntreDots, paramLerp);
         dotPlayerController.timeBetweenDots = tempsEntreDots;
         Debug.Log("timeBetweenDots = " + tempsEntreDots);
+
+        //Selection des autres paramètres
         float nbDots = Mathf.Lerp(paramDiffVeryEasy.nbDots, paramDiffInsane.nbDots, paramLerp);
         dotGenerator.nbDots = (int)nbDots;
         Debug.Log("nbDots = " + nbDots);

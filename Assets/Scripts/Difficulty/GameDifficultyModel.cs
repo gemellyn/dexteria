@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -23,12 +22,34 @@ public class GameDifficultyModel : MonoBehaviour
 
     LogisticRegression.ModelLR Model;
     double Accuracy = 0;
+    bool AccuracyUpToDate = false;
     List<double[]> Tries;
     List<double> Results;
     string FileName = "data.csv";
-    bool profileSet = false;
-    public double getAccuracy() { return Accuracy;  }
-           
+    bool ProfileSet = false;
+    
+
+    /**
+     * Essaie d'estimer la qualité du modèle.
+     * Si on a moins de 10 points, on retourne 0
+     * Si on a plus de 10 points, on calcule la qualité de prédiction avec une crossval tenfold
+     */
+    public double getModelQuality() {
+        if (Results == null)
+            return 0;
+        if (Results.Count < 10)
+            return 0;
+        return getAccuracy();
+    }
+
+    double getAccuracy()
+    {
+        if (!AccuracyUpToDate)
+            updateModel(true);
+
+        return Accuracy;
+    }
+
     /**
      * Choisit et charge le bon fichier de data pour le joueur et l'activité
      * Attention les id sont convertis en nom de fichiers, ne pas utiliser
@@ -37,7 +58,7 @@ public class GameDifficultyModel : MonoBehaviour
     public void setProfile(string userId, string activityId)
     {
         FileName = userId + "_" + activityId + ".csv";
-        profileSet = true;
+        ProfileSet = true;
         loadFromDisk();
         updateModel(calcAccuracy);
     }
@@ -48,9 +69,9 @@ public class GameDifficultyModel : MonoBehaviour
      *            utiliser toujours le même ordre pour les différents paramètres d'un meme challenge
      * win : si le joueur a réussi ou pas son essai
      */
-    public void addTry(double[] diffVars, bool win,bool save=true, bool update=true)
+    public void addTry(double[] diffVars, bool win, bool save=true, bool update=true)
     {
-        if (!profileSet)
+        if (!ProfileSet)
             throw new Exception("addTry but no profile set");
 
         if(Tries == null)
@@ -61,8 +82,9 @@ public class GameDifficultyModel : MonoBehaviour
 
         Tries.Add(diffVars);
         Results.Add(win ? 1 : 0);
+        AccuracyUpToDate = false;
 
-        if(save)
+        if (save)
             saveToDisk();
 
         if (update)
@@ -75,7 +97,7 @@ public class GameDifficultyModel : MonoBehaviour
      */
     public double predictDifficulty(double[] vars)
     {
-        if (!profileSet)
+        if (!ProfileSet)
             throw new Exception("predictDifficulty but no profile set");
 
         return Model.Predict(vars);
@@ -89,7 +111,7 @@ public class GameDifficultyModel : MonoBehaviour
      */
     public double getDiffParameter(double probaFail, double[] vars = null, int varToSet = 0)
     {
-        if (!profileSet)
+        if (!ProfileSet)
             throw new Exception("predictDifficulty but no profile set");
 
         return Model.InvPredict(probaFail, vars, varToSet);
@@ -113,7 +135,7 @@ public class GameDifficultyModel : MonoBehaviour
 
     public void updateModel(bool updateAccuracy = true)
     {
-        if (!profileSet)
+        if (!ProfileSet)
             throw new Exception("updateModel but no profile set");
 
         //Loading data
@@ -141,6 +163,7 @@ public class GameDifficultyModel : MonoBehaviour
                 Accuracy += LogisticRegression.TestModel(Model, dataTest);
             }
             Accuracy /= 10;
+            AccuracyUpToDate = true;
             Debug.Log("Accuracy :  " + Accuracy);
         }
 
@@ -152,7 +175,7 @@ public class GameDifficultyModel : MonoBehaviour
 
     public void saveToDisk()
     {
-        if (!profileSet)
+        if (!ProfileSet)
             throw new Exception("saveToDisk but no profile set");
 
         Debug.Log("Saving to disk");
@@ -164,7 +187,7 @@ public class GameDifficultyModel : MonoBehaviour
 
     void loadFromDisk()
     {
-        if (!profileSet)
+        if (!ProfileSet)
             throw new Exception("loadFromDisk but no profile set");
 
         Tries = new List<double[]>();

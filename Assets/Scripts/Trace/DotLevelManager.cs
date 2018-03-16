@@ -125,8 +125,7 @@ public class DotLevelManager : MonoBehaviour {
 
         //Selection du temps
 
-        c'est ici qu'on en est !!! 
-
+        //c'est ici qu'on en est !!! 
         float tempsEntreDots = Mathf.Lerp(paramDiffVeryEasy.tempsEntreDots, paramDiffInsane.tempsEntreDots, paramLerp);
         dotPlayerController.timeBetweenDots = tempsEntreDots;
         Debug.Log("timeBetweenDots = " + tempsEntreDots);

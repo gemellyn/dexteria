@@ -7,9 +7,11 @@ using UnityEngine;
  * Pour utiliser le manager de difficulté :
  * 1) appeler setActivity avec le nom du joueur et l'activité qu'on souhaite activer 
  *    les datas sont chargées et le modèle se met à jour automatiquement
- * 2) appeler getDiffParams avec le bon numéro de niveau (on commence à 0 puis on incrémente à chaque fois
+ * 2) appeler getModelQuality pour savoir si le modèle est capable de prédire des choses.
+ *    si c'est le cas (choisir un seuil), alors passer au point 3 puis 4
+ * 3) appeler getDiffParams avec le bon numéro de niveau (on commence à 0 puis on incrémente à chaque fois
  *    que le joueur gagne ou perd le challenge0) pour avoir les paramètres de difficulté
- * 3) appeler addTry pour ajouter un nouvel du joueur au modèle et le sauver 
+ * 4) appeler addTry pour ajouter un nouvel essai du joueur au modèle et le sauver 
  */
 
 [RequireComponent(typeof(GameDifficultyModel))]
@@ -101,6 +103,17 @@ public class GameDifficultyManager : MonoBehaviour {
         //On tire une courbe de difficulté au hasard
         setDiffCurve(Random.Range(0, DifficultyCurvePlaying.Length));
     }
+
+    /**
+     * Retourne la qualité du modèle entre 0 et 1
+     * A partir d'un certain seuil, on peut choisir d'utiliser les valeurs que donne le modèle
+     * Sinon on se contente de continuer à lui donner des données et on utilise
+     * une autre stratégie pour déterminer la difficulté
+     */
+    public double getModelQuality()
+    {
+        return Model.getModelQuality();
+    }
     
     /**
      * Ajoute un essai au modèle et le sauve
@@ -121,6 +134,12 @@ public class GameDifficultyManager : MonoBehaviour {
      */
     public double[] getDiffParams(int numLevel)
     {
+        //A faire : faire ici le check de l'etat du modele avec getModelQuality
+        //Si on est sous 0.6, on fait du +delta -delta en fonction du dernier résultat
+        //Si on est au dessus de 0.6, on utilise le modèle et en avant toute
+        //Penser à ajouter au proto du debug en fond d'écran qu'on peut toggle avec un triple touch par exemple
+
+
         //on regarde dans quelle courbe on tombe
         AnimationCurve ac = DifficultyCurveLearning;
         int numStepInCurve = numLevel;

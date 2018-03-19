@@ -28,7 +28,6 @@ public class Dot : MonoBehaviour {
         WaveTime = time;
         DoWave = true;
 
-        Debug.Log("Go anim !! " + Time.time);
         GetComponentInChildren<Animator>().SetTrigger("Wave");
     }
 
@@ -115,8 +114,6 @@ public class Dot : MonoBehaviour {
             WaveTime -= Time.deltaTime;
             if (WaveTime <= 0)
             {
-                Debug.Log("Wave !! " + Time.time);
-
                 DoWave = false;
                 if (NextDot && NextDot.GetComponentInChildren<SpriteRenderer>().enabled)
                 {

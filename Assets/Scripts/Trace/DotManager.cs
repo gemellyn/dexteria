@@ -44,14 +44,15 @@ public class DotManager : MonoBehaviour {
                     Dot2 = tmpDot;
                     
                 }
-
-               
-
+                
             }
 
             tmpDot = tmpDot.GetComponent<Dot>().NextDot;
             i++;
         }
+
+        if (Dot1 == null || Dot2 == null)
+            return 0;
 
         //On projette sur le vecteur perpendiculaire (distance à la courbe)
         Vector3 vec = (Dot2.position - Dot1.position).normalized;

@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.UI;
 
 /**
  * Pour utiliser le manager de difficulté :
@@ -27,6 +27,7 @@ public class GameDifficultyManager : MonoBehaviour {
     {
         public GDActivityEnum ActivityEnum;
         public string Name;
+        public int NbVars;
         public abstract double[] getParams(GameDifficultyModel model, double difficulty);
     }
 
@@ -35,6 +36,7 @@ public class GameDifficultyManager : MonoBehaviour {
         public TraceActivity()
         {
             Name = "Trace";
+            NbVars = 2;
             ActivityEnum = GDActivityEnum.TRACE;
         }
 
@@ -54,6 +56,7 @@ public class GameDifficultyManager : MonoBehaviour {
         public SimonActivity()
         {
             Name = "Simon";
+            NbVars = 1;
             ActivityEnum = GDActivityEnum.SIMON;
         }
                 
@@ -65,6 +68,13 @@ public class GameDifficultyManager : MonoBehaviour {
             return vars;
         }
     }
+
+    public void Awake()
+    {
+        Model = GetComponent<GameDifficultyModel>();
+    }
+
+    public Text DebugText;
 
     public AnimationCurve DifficultyCurveLearning; //Courbe au début progressive
     public int NbStepsLearning; //Nombre d'essais pour l'apprentissage
@@ -87,7 +97,7 @@ public class GameDifficultyManager : MonoBehaviour {
     public void setActivity(string playerId, GDActivityEnum activity)
     {
         //Si c'est la meme, on ne touche a rien
-        if (activity == Activity.ActivityEnum)
+        if (Activity != null && activity == Activity.ActivityEnum)
             return;
 
         switch (activity)
@@ -134,29 +144,70 @@ public class GameDifficultyManager : MonoBehaviour {
      */
     public double[] getDiffParams(int numLevel)
     {
-        //A faire : faire ici le check de l'etat du modele avec getModelQuality
-        //Si on est sous 0.6, on fait du +delta -delta en fonction du dernier résultat
-        //Si on est au dessus de 0.6, on utilise le modèle et en avant toute
-        //Penser à ajouter au proto du debug en fond d'écran qu'on peut toggle avec un triple touch par exemple
+        double[] retVals = null;
 
+        double quality = Model.getModelQuality();
+        string debugString = "Q: " + Mathf.Floor((float)quality*100)/100;
 
-        //on regarde dans quelle courbe on tombe
-        AnimationCurve ac = DifficultyCurveLearning;
-        int numStepInCurve = numLevel;
-        int nbStepOfCurve = NbStepsLearning;
-        if (numLevel >= NbStepsLearning)
+        if(quality < 0.6)
         {
-            ac = DifficultyCurvePlaying[0];
-            numStepInCurve -= NbStepsLearning;
-            numStepInCurve = numStepInCurve % NbStepsPlaying;
-            nbStepOfCurve = NbStepsPlaying;
+            Debug.Log("Model quality is low (" + quality + "), using +-(delta * rnd(0.5,1.0)) based on win / fail");
+            //Recup les derniers essais
+            double [] lastTryAndRes = Model.getLastTryAndRes();
+            retVals = new double[Activity.NbVars];
+
+            //Si on est au toiut début, on part de 0, la diff la plus basse
+            if (numLevel == 0 || lastTryAndRes == null)
+            {
+                for (int i = 0; i < retVals.Length; i++)
+                    retVals[i] = 0;
+            }
+            else
+            {
+                bool win = lastTryAndRes[lastTryAndRes.Length - 1] > 0;
+                double delta = (1.0 / (double)NbStepsLearning);
+                delta = win ? delta : -delta;
+                for (int i = 0; i < retVals.Length; i++)
+                    retVals[i] = lastTryAndRes[i] + (delta * Random.Range(0.5f, 1.0f));
+            }
+        }
+        else
+        {
+            Debug.Log("Model is okay (" + quality + "), using it :)");
+
+            //on regarde dans quelle courbe on tombe
+            AnimationCurve ac = DifficultyCurveLearning;
+            int numStepInCurve = numLevel;
+            int nbStepOfCurve = NbStepsLearning;
+            if (numLevel >= NbStepsLearning)
+            {
+                ac = DifficultyCurvePlaying[DiffCurvePlayingChosen];
+                numStepInCurve -= NbStepsLearning;
+                numStepInCurve = numStepInCurve % NbStepsPlaying;
+                nbStepOfCurve = NbStepsPlaying;
+            }
+
+            //On récup la difficulté voulue
+            double difficulty = ac.Evaluate((float)numStepInCurve / (float)nbStepOfCurve);
+
+            //On affiche la difficulté voulue
+            Debug.Log("Target difficulty is " + difficulty);
+
+            debugString += "\nD: " + Mathf.Floor((float)difficulty * 100) / 100;
+
+            //On construit le tableau en fonction de l'activité
+            retVals = Activity.getParams(Model, difficulty);
         }
 
-        //On récup la difficulté voulue
-        double difficulty = ac.Evaluate((float)numStepInCurve / (float)nbStepOfCurve);
+        string parsStr = "";
+        for (int i = 0; i < retVals.Length; i++)
+            parsStr += i + ":[ " + (Mathf.Floor((float)retVals[i] * 100) / 100) + " ]  ";
+        Debug.Log("Giving params "+parsStr);
 
-        //On construit le tableau en fonciton de l'activité
-        return Activity.getParams(Model, difficulty);
+        debugString += "\n"+parsStr;
+        DebugText.text = debugString;
+
+        return retVals;
     }
 
 

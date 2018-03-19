@@ -110,7 +110,7 @@ public class DotAdderAuto : MonoBehaviour {
 
         }
 
-        Debug.Log("Nb essais :" + c);
+        Debug.Log(c+" tries to generate dots");
 
         //Toujours dans la partie basse droite : que les doigts genent le moins possible la visu
         if (finalDots.Length >= 1)

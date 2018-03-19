@@ -44,15 +44,15 @@ public class DotLevelManager : MonoBehaviour {
         dotGenerator = GetComponent<DotAdderAuto>();
         dotPlayerController = GetComponent<DotPlayerController>();
         dotManager = GetComponent<DotManager>();
-        DiffManager.setActivity("BasePlayer", GameDifficultyManager.GDActivityEnum.TRACE);
         numLevel = 0;
         points = 0;
     }
 
     void Start()
     {
+        DiffManager.setActivity("BasePlayer", GameDifficultyManager.GDActivityEnum.TRACE);
         nextLevel(true, false);
-        LastDiffVars = DiffManager.getDiffParams(0);
+        //LastDiffVars = DiffManager.getDiffParams(0);
     }
 
     void Update()
@@ -75,12 +75,19 @@ public class DotLevelManager : MonoBehaviour {
     public void nextLevel(bool reset, bool win)
     {
 
-        DiffManager.addTry(LastDiffVars, win);
+        if(LastDiffVars != null && !reset)
+        {
+            //Si on considère le précédent comme valide (au moins 3 dots validés)
+            if(dotPlayerController.getNbDotsTouched() >= 3)
+                DiffManager.addTry(LastDiffVars, win);
+        }
+            
+
         numLevel++;
 
         if (win)
         {
-            points += 1;
+            points++;
             dotPlayerController.colBase = Color.HSVToRGB(Random.Range(0.0f, 1.0f), 0.9f, 0.9f);
         }
         
@@ -88,11 +95,11 @@ public class DotLevelManager : MonoBehaviour {
         {
             GameObject.Find("Music").GetComponent<Music>().newMusic();
             points = 0;
+            numLevel = 0;
         }
                     
         if (!win)
         {
-            points -= 5;
             GameObject.Find("Music").GetComponent<Music>().newMusic();
         }
 
@@ -105,52 +112,57 @@ public class DotLevelManager : MonoBehaviour {
         Debug.Log("Making level " + numLevel);
 
         //On s'en servira un jour :)
-        float moyenne = 0;
+        /*float moyenne = 0;
         float ecartType = 0;
         dotPlayerController.getStatsPlayer(ref moyenne, ref ecartType);
 
-        //JOlie courbe de diff
+        //Jolie courbe de diff
         float paramLerpBase = (float)numLevel / (float)nbMaxLevels;
         float paramLerpPow = Mathf.Pow(paramLerpBase, 0.1f);
         float paramLerpSigm = 1/(1+Mathf.Exp(-30.0f* paramLerpBase + 6.0f));
         float paramLerp = (paramLerpSigm + paramLerpPow)/2.0f;
         if (paramLerpPow < paramLerpSigm)
-            paramLerp = paramLerpPow;
+            paramLerp = paramLerpPow;*/
+
+        //courbe de diff avec modele
+        float paramLerpTime = (float)LastDiffVars[0];
+        float paramLerpComplexity = (float)LastDiffVars[1];
+        float paramLerpMean = (paramLerpComplexity + paramLerpTime) / 2.0f;
 
         //Son
-        dotPlayerController.setPitch(Mathf.Lerp(1.0f,3.0f, paramLerpBase));
-        WinSound.pitch = Mathf.Lerp(1.0f, 3.0f, paramLerpBase);
+        dotPlayerController.setPitch(Mathf.Lerp(1.0f,3.0f, paramLerpMean));
+        WinSound.pitch = Mathf.Lerp(1.0f, 3.0f, paramLerpMean);
         if (win)
             WinSound.Play();
 
         //Selection du temps
 
-        //c'est ici qu'on en est !!! 
-        float tempsEntreDots = Mathf.Lerp(paramDiffVeryEasy.tempsEntreDots, paramDiffInsane.tempsEntreDots, paramLerp);
+        //Selection du temps
+        float tempsEntreDots = Mathf.Lerp(paramDiffVeryEasy.tempsEntreDots, paramDiffInsane.tempsEntreDots, paramLerpTime);
         dotPlayerController.timeBetweenDots = tempsEntreDots;
-        Debug.Log("timeBetweenDots = " + tempsEntreDots);
+        //Debug.Log("timeBetweenDots = " + tempsEntreDots);
 
-        //Selection des autres paramètres
-        float nbDots = Mathf.Lerp(paramDiffVeryEasy.nbDots, paramDiffInsane.nbDots, paramLerp);
+        //Selection des autres paramètres 
+        float nbDots = Mathf.Lerp(paramDiffVeryEasy.nbDots, paramDiffInsane.nbDots, paramLerpComplexity);
         dotGenerator.nbDots = (int)nbDots;
-        Debug.Log("nbDots = " + nbDots);
-        float nbDotsBtwNewAngle = Mathf.Lerp(paramDiffVeryEasy.nbDotsBetweenNewAngle, paramDiffInsane.nbDotsBetweenNewAngle, paramLerp);
+        //Debug.Log("nbDots = " + nbDots);
+        float nbDotsBtwNewAngle = Mathf.Lerp(paramDiffVeryEasy.nbDotsBetweenNewAngle, paramDiffInsane.nbDotsBetweenNewAngle, paramLerpComplexity);
         dotGenerator.freqNewAngle = (int)nbDotsBtwNewAngle;
-        Debug.Log("nbDotsBtwNewAngle = " + (int)nbDotsBtwNewAngle);
-        float baseAngle = Mathf.Lerp(paramDiffVeryEasy.baseAngle, paramDiffInsane.baseAngle, paramLerp);
+        //Debug.Log("nbDotsBtwNewAngle = " + (int)nbDotsBtwNewAngle);
+        float baseAngle = Mathf.Lerp(paramDiffVeryEasy.baseAngle, paramDiffInsane.baseAngle, paramLerpComplexity);
         dotGenerator.minAngleBase = baseAngle * (1.0f - (spreadBaseAngle-1.0f));
         dotGenerator.maxAngleBase = baseAngle * spreadBaseAngle;
-        Debug.Log("baseAngle = " + baseAngle);
-        float probaInverse = Mathf.Lerp(paramDiffVeryEasy.probaInverseAngle, paramDiffInsane.probaInverseAngle, paramLerp);
+        //Debug.Log("baseAngle = " + baseAngle);
+        float probaInverse = Mathf.Lerp(paramDiffVeryEasy.probaInverseAngle, paramDiffInsane.probaInverseAngle, paramLerpComplexity);
         dotGenerator.probaInverseAngle = probaInverse;
-        Debug.Log("probaInverse = " + probaInverse);
-        float probaGrosAngle = Mathf.Lerp(paramDiffVeryEasy.probaGrosAngle, paramDiffInsane.probaGrosAngle, paramLerp);
+        //Debug.Log("probaInverse = " + probaInverse);
+        float probaGrosAngle = Mathf.Lerp(paramDiffVeryEasy.probaGrosAngle, paramDiffInsane.probaGrosAngle, paramLerpComplexity);
         dotGenerator.probaGrosAngle = probaGrosAngle;
-        Debug.Log("probaGrosAngle = " + probaGrosAngle);
-        float grosAngle = Mathf.Lerp(paramDiffVeryEasy.grosAngle, paramDiffInsane.grosAngle, paramLerp);
+        //Debug.Log("probaGrosAngle = " + probaGrosAngle);
+        float grosAngle = Mathf.Lerp(paramDiffVeryEasy.grosAngle, paramDiffInsane.grosAngle, paramLerpComplexity);
         dotGenerator.minGrosAngle = grosAngle * (1.0f - (spreadBaseAngle - 1.0f));
         dotGenerator.maxGrosAngle = grosAngle * spreadBaseAngle;
-        Debug.Log("grosAngle = " + grosAngle);
+        //Debug.Log("grosAngle = " + grosAngle);
 
         dotGenerator.generate();
 

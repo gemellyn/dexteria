@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System;
 using System.IO;
+using System.IO.IsolatedStorage;
 
 class LogisticRegression
 {
@@ -20,8 +21,8 @@ class LogisticRegression
         {
             DataLR part = new DataLR();
 
-            if (IndepVar == null)
-                return null;
+            if (DepVar.Length == 0)
+                return part;
 
             int nbRows = DepVar.Length;
             int nbVars = IndepVar[0].Length;
@@ -84,6 +85,9 @@ class LogisticRegression
             partOut = new DataLR();
             partIn = new DataLR();
 
+            if (DepVar.Length == 0)
+                return;
+
             int nbLignes = DepVar.Length;
             int nbVars = IndepVar[0].Length;
 
@@ -129,28 +133,32 @@ class LogisticRegression
 
         public DataLR getLastNRows(int nbRows)
         {
-            int nbRowsTake = Math.Min(nbRows, DepVar.Length);
-            int nbVars = IndepVar[0].Length;
-            int iStart = DepVar.Length - nbRowsTake;
             DataLR part = new DataLR();
-            part.IndepVar = MatrixCreate(nbRowsTake, nbVars);
-            part.DepVar = VectorCreate(nbRowsTake);
-
-            int row = 0;
-            int rowLoad = 0;
-            foreach (double[] vars in IndepVar)
+            if(DepVar.Length > 0)
             {
-                //out of section
-                if (row >= iStart)
-                {
-                    for (int i = 0; i < vars.Length; i++)
-                        part.IndepVar[rowLoad][i] = vars[i];
-                    part.DepVar[rowLoad] = DepVar[row];
-                    ++rowLoad;
-                }
-                ++row;
-            }
+                int nbRowsTake = Math.Min(nbRows, DepVar.Length);
+                int nbVars = IndepVar[0].Length;
+                int iStart = DepVar.Length - nbRowsTake;
 
+                part.IndepVar = MatrixCreate(nbRowsTake, nbVars);
+                part.DepVar = VectorCreate(nbRowsTake);
+
+                int row = 0;
+                int rowLoad = 0;
+                foreach (double[] vars in IndepVar)
+                {
+                    //out of section
+                    if (row >= iStart)
+                    {
+                        for (int i = 0; i < vars.Length; i++)
+                            part.IndepVar[rowLoad][i] = vars[i];
+                        part.DepVar[rowLoad] = DepVar[row];
+                        ++rowLoad;
+                    }
+                    ++row;
+                }
+            }
+       
             return part;
         }
         
@@ -241,7 +249,13 @@ class LogisticRegression
             {
                 IndepVar = MatrixCreate(0, 0);
                 DepVar = new double[0];
-                Console.WriteLine("File "+ csvFile + " not found");
+                Console.WriteLine("File "+ csvFile + " not found ("+e.Message+")");
+            }
+            catch(IsolatedStorageException e)
+            {
+                IndepVar = MatrixCreate(0, 0);
+                DepVar = new double[0];
+                Console.WriteLine("File " + csvFile + " not found (" + e.Message + ")");
             }
         }
 
@@ -282,6 +296,11 @@ class LogisticRegression
     {
         public double[] Betas;
 
+        public ModelLR()
+        {
+            Betas = new double[0];
+        }
+
         public double Predict(double[] values)
         {
             // p = 1 / (1 + exp(-z) where z = b0x0 + b1x1 + b2x2 + b3x3 + . . .
@@ -294,7 +313,7 @@ class LogisticRegression
             double z = 0.0;
 
             z = 1.0 * Betas[0]; // b0(1.0)
-            for (int i = 0; i < Betas.Length; ++i)
+            for (int i = 0; i < Betas.Length-1; ++i)
             {
                 z += values[i] * Betas[i+1]; // z + b1x1 + b2x2 + . . .
             }
@@ -303,34 +322,39 @@ class LogisticRegression
             return result;
         }
 
+
+        
+
         //trouve le bon params xi pour une proba donnée et toutes les variables xj(j!=i) fixées sauf une (sinon pas de res)
-        //xi = ( (-ln(1/p) - (b(j!=i)x(j!=i)) ) / bi;
+        //xi = ( (-ln(1/p -1) - (b(j!=i)x(j!=i)) ) / bi;
         public double InvPredict(double proba, double [] values = null, int varToSet = 0)
         {
             double valueXi = 0;
 
+            if (Betas.Length == 0)
+                return 0.0f;
+
             double sommeBjXjNotI = 1.0 * Betas[0]; // b0(1.0)
 
             //Si une seule vairable, on fait direct la prédiction , pas besoin de bloquer les autres
-            if(Betas.Length == 1)
+            if(Betas.Length == 2)
             {
                 valueXi = ((-Math.Log(1.0 / proba) - sommeBjXjNotI)) / Betas[1];
             }
             else
             {
-                for (int i = 0; i < Betas.Length; ++i)
+                for (int i = 0; i < Betas.Length-1; ++i)
                 {
                     if (i != varToSet)
                         sommeBjXjNotI += values[i] * Betas[i + 1]; // z + b1x1 + b2x2 + . . .
-                    valueXi = ((-Math.Log(1.0 / proba) - sommeBjXjNotI)) / Betas[varToSet + 1];
                 }
+                valueXi = ((-Math.Log(1.0 / proba - 1) - sommeBjXjNotI)) / Betas[varToSet + 1];
             }
                        
             return valueXi;
         }
 
     }
-
 
     //Le fichier doit contenir pour chaque lignes les valeurs des indépendants suivie de la dépendante
     public static ModelLR ComputeModel(DataLR datas)
@@ -347,40 +371,36 @@ class LogisticRegression
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Fatal: " + ex.Message);
+            Console.WriteLine("Fatal in ComputeBestBeta: " + ex.Message);
         }
 
         return model;
     }
-
-
-
+    
     public static double TestModel(ModelLR model, DataLR testData)
     {
         double acc = 0;
         try
         {
-            acc = PredictiveAccuracy(testData.IndepVar, testData.DepVar, model.Betas); // percent of data cases correctly predicted in the test data set.
+            acc = (double)PredictiveAccuracy(testData.IndepVar, testData.DepVar, model.Betas)/100.0; // percent of data cases correctly predicted in the test data set.
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Fatal: " + ex.Message);
+            Console.WriteLine("Fatal in TestModel: " + ex.Message);
         }
 
         return acc;
     }
-
-
-   
-
-
-
+    
     static double PredictiveAccuracy(double[][] xMatrix, double[] yVector, double[] bVector)
     {
         // returns the percent (as 0.00 to 100.00) accuracy of the bVector measured by how many lines of data are correctly predicted.
         // note: this is not the same as accuracy as measured by sum of squared deviations between 
         // the probabilities produceed by bVector and 0.0 and 1.0 data in yVector
         // For predictions we simply see if the p produced by b are >= 0.50 or not.
+
+        if (xMatrix == null || xMatrix.Length == 0 || yVector == null || bVector == null)
+            return 0;
 
         int xRows = xMatrix.Length; int xCols = xMatrix[0].Length;
         int yRows = yVector.Length;
@@ -427,6 +447,9 @@ class LogisticRegression
         // There is a lot that can go wrong here. The algorithm involves finding a matrx inverse (see MatrixInverse) which will throw
         // if the inverse cannot be computed. The Newton-Raphson algorithm can generate beta values that tend towards infinity. 
         // If anything bad happens the return is the best beta values known at the time (which could be all 0.0 values but not null).
+
+        if (xMatrix.Length == 0)
+            return null;
 
         int xRows = xMatrix.Length;
         int xCols = xMatrix[0].Length;

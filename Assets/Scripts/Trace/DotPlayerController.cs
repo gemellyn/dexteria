@@ -17,7 +17,7 @@ public class DotPlayerController : MonoBehaviour
     public Color colTimeOut;
     public Color colBase;
 
-    //Statq
+    //Stats
     private float[] timeDots;
     private int iTimeDots = 0;
     private Vector3 previousTouch;
@@ -34,6 +34,11 @@ public class DotPlayerController : MonoBehaviour
     public void newLevel()
     {
         startWaveDone = false;
+    }
+
+    public int getNbDotsTouched()
+    {
+        return iTimeDots;
     }
 
     public void getStatsPlayer(ref float moyenne, ref float ecartType)

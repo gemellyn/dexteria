@@ -17,7 +17,7 @@ public class FakePlayer : MonoBehaviour {
         gd.setProfile("fakePlayer","fakeActivity");
         simulate();
         gd.updateModel(true);
-        Debug.Log("Accuracy : "+gd.getAccuracy());
+        Debug.Log("Model quality : "+gd.getModelQuality());
 	}
 
     void simulate()

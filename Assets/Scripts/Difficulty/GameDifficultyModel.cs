@@ -12,7 +12,7 @@ using UnityEngine;
 
 public class GameDifficultyModel : MonoBehaviour
 {
-    public int nbLastSamples = 500;
+    public int NbLastSamples = 500;
 
 #if UNITY_EDITOR
     bool calcAccuracy = true;
@@ -28,6 +28,25 @@ public class GameDifficultyModel : MonoBehaviour
     string FileName = "data.csv";
     bool ProfileSet = false;
     
+    /**
+     * Permet de remonter dans l'historique du joueur, au moins pour le dernier try
+     * Retourne un tableau avec les valeurs des variables puis le résultat
+     */
+    public double [] getLastTryAndRes()
+    {
+        if (Tries.Count == 0)
+            return null;
+
+        double[] lastTry = Tries[Tries.Count - 1];
+        double[] lastTryAndRes = new double[lastTry.Length + 1];
+        for(int i=0;i< lastTry.Length; i++)
+        {
+            lastTryAndRes[i] = lastTry[i];
+        }
+        lastTryAndRes[lastTry.Length] = Results[Results.Count - 1];
+
+        return lastTryAndRes;
+    }
 
     /**
      * Essaie d'estimer la qualité du modèle.
@@ -60,7 +79,7 @@ public class GameDifficultyModel : MonoBehaviour
         FileName = userId + "_" + activityId + ".csv";
         ProfileSet = true;
         loadFromDisk();
-        updateModel(calcAccuracy);
+        updateModel(true);
     }
 
     /**
@@ -78,6 +97,12 @@ public class GameDifficultyModel : MonoBehaviour
         {
             Tries = new List<double[]>();
             Results = new List<double>();
+        }
+
+        if(diffVars == null)
+        {
+            Debug.Log("ERROR: adding try with no diff vars. Not Adding");
+            return;
         }
 
         Tries.Add(diffVars);
@@ -100,7 +125,7 @@ public class GameDifficultyModel : MonoBehaviour
         if (!ProfileSet)
             throw new Exception("predictDifficulty but no profile set");
 
-        return Model.Predict(vars);
+        return 1.0-Model.Predict(vars);
     }
 
     /**
@@ -114,7 +139,7 @@ public class GameDifficultyModel : MonoBehaviour
         if (!ProfileSet)
             throw new Exception("predictDifficulty but no profile set");
 
-        return Model.InvPredict(probaFail, vars, varToSet);
+        return Model.InvPredict(1.0-probaFail, vars, varToSet);
     }
 
     /**
@@ -143,12 +168,12 @@ public class GameDifficultyModel : MonoBehaviour
         data.LoadDataFromList(Tries, Results);
 
         //On ne garde que les n derniers car apprentissage
-        data = data.getLastNRows(nbLastSamples);
+        data = data.getLastNRows(NbLastSamples);
         data = data.shuffle();
 
         data.saveDataToCsv(Application.persistentDataPath + "/usedToTrain.csv");
 
-        Debug.Log("Using " + data.DepVar.Length + " lines");
+        Debug.Log("Using " + data.DepVar.Length + " lines to update model");
 
         if (updateAccuracy)
         {
@@ -164,7 +189,7 @@ public class GameDifficultyModel : MonoBehaviour
             }
             Accuracy /= 10;
             AccuracyUpToDate = true;
-            Debug.Log("Accuracy :  " + Accuracy);
+            Debug.Log("Updating accuracy : " + Accuracy);
         }
 
         //Using all data to update model
@@ -201,7 +226,7 @@ public class GameDifficultyModel : MonoBehaviour
             data.LoadDataFromCsv(Application.persistentDataPath + "/" + FileName);
         }catch(FormatException e)
         {
-            Debug.Log("Player data corrupted !!!! Erasing");
+            Debug.Log("Player data corrupted !!!! Erasing ("+e.Message+")");
             Reset();
             saveToDisk();
         }

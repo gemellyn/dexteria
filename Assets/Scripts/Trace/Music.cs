@@ -44,7 +44,7 @@ public class Music : MonoBehaviour {
 
         int iNewZic = (iplaying + Random.Range(1, musics.Length-1)) % musics.Length;
 
-        Debug.Log("Old music was " + iplaying + " new is " + iNewZic);
+        //Debug.Log("Old music was " + iplaying + " new is " + iNewZic);
 
         musics[iNewZic].Play();
     }

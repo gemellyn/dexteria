@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 /**
  * Pour utiliser le manager de difficulté :
- * 1) appeler setActivity avec le nom du joueur et l'activité qu'on souhaite activer 
+ * 1) appeler setPlayerId avec le nom du joueur et setActivity avec l'activité qu'on souhaite activer 
  *    les datas sont chargées et le modèle se met à jour automatiquement
  * 2) appeler getModelQuality pour savoir si le modèle est capable de prédire des choses.
  *    si c'est le cas (choisir un seuil), alors passer au point 3 puis 4
@@ -84,17 +84,26 @@ public class GameDifficultyManager : MonoBehaviour {
   
     GameDifficultyModel Model;
     GDActivity Activity;
+    private string PlayerId = "UnknownPlayer";
 
     private void setDiffCurve(int diffCurve)
     {
         DiffCurvePlayingChosen = diffCurve;
     }
+
+    /**
+     * Permet de sélectionner le bon joueur
+     */
+    public void setPlayerId(string playerId)
+    {
+        PlayerId = playerId;
+    }
     
     /**
-     * Permet de sélectionner l'activite à débuter
-     * On met à jour le modèle et la courbe de difficulté
-     */
-    public void setActivity(string playerId, GDActivityEnum activity)
+        * Permet de sélectionner l'activite à débuter
+        * On met à jour le modèle et la courbe de difficulté
+        */
+    public void setActivity(GDActivityEnum activity)
     {
         //Si c'est la meme, on ne touche a rien
         if (Activity != null && activity == Activity.ActivityEnum)
@@ -108,7 +117,7 @@ public class GameDifficultyManager : MonoBehaviour {
         }
 
         //On met à jour le profil
-        Model.setProfile(playerId, Activity.Name);
+        Model.setProfile(PlayerId, Activity.Name);
 
         //On tire une courbe de difficulté au hasard
         setDiffCurve(Random.Range(0, DifficultyCurvePlaying.Length));

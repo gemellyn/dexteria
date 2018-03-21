@@ -50,7 +50,10 @@ public class DotLevelManager : MonoBehaviour {
 
     void Start()
     {
-        DiffManager.setActivity("BasePlayer", GameDifficultyManager.GDActivityEnum.TRACE);
+        GameObject sm = GameObject.Find("SceneManager");
+        if (sm)
+            DiffManager.setPlayerId(sm.GetComponent<LoadMainScene>().getPlayerName());
+        DiffManager.setActivity(GameDifficultyManager.GDActivityEnum.TRACE);
         nextLevel(true, false);
         //LastDiffVars = DiffManager.getDiffParams(0);
     }

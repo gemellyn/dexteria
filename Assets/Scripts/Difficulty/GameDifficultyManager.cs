@@ -156,7 +156,7 @@ public class GameDifficultyManager : MonoBehaviour {
         double[] retVals = null;
 
         double quality = Model.getModelQuality();
-        string debugString = "Q: " + Mathf.Floor((float)quality*100)/100;
+        string debugString = "Qualité: " + Mathf.Floor((float)quality*100)/100;
 
         if(quality < 0.6)
         {
@@ -202,7 +202,7 @@ public class GameDifficultyManager : MonoBehaviour {
             //On affiche la difficulté voulue
             Debug.Log("Target difficulty is " + difficulty);
 
-            debugString += "\nD: " + Mathf.Floor((float)difficulty * 100) / 100;
+            debugString += "\nDiff: " + Mathf.Floor((float)difficulty * 100) / 100;
 
             //On construit le tableau en fonction de l'activité
             retVals = Activity.getParams(Model, difficulty);

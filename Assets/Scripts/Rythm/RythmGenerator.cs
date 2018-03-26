@@ -27,37 +27,46 @@ public class RythmGenerator : MonoBehaviour
     void Start()
     {
         GameObject sm = GameObject.Find("SceneManager");
-       if (sm)
+        if (sm)
             DiffManager.setPlayerId(sm.GetComponent<LoadMainScene>().getPlayerName());
         DiffManager.setActivity(GameDifficultyManager.GDActivityEnum.SIMON);
-        newLevel(false,true);
+        newLevel(false, true);
     }
 
+    /**
+    * Calcul de la complexité d'une séquence rythmique
+    * Cette fonction normalise par la difficulté max d'une séquence de taille nbSlots
+    * Il faut donc gérer la taille de la séquence indépendament
+    **/
     float[] RefTabComplexity = { 5, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1 };
     bool[] HasBeenMax = new bool[16];
     bool[] HasBeenMin = new bool[16];
     float calcRythmComplexity(bool[] tab, int nbSlots)
     {
+        //Taille de la séquence
         int seqSize = Mathf.Min(RefTabComplexity.Length, tab.Length);
+
+        //On calcule l'accentuation de la séquence
         float accentuation = 0;
         for (int i = 0; i < seqSize; i++)
         {
             accentuation += tab[i] ? RefTabComplexity[i] : 0;
         }
 
+        //On se prépare à calculer l'acentation min et max pour une séquence de cette taille
         for (int i = 0; i < HasBeenMax.Length; i++)
         {
             HasBeenMax[i] = false;
             HasBeenMin[i] = false;
         }
-           
-
         float accentuationMax = 0;
         float accentuationMin = 0;
         float currentMax = 0;
         float currentMin = 30;
         int iMax = -1;
         int iMin = -1;
+
+        //Calcul des accentuations min et max
         for (int j = 0; j < nbSlots; j++)
         {
             for (int i = 0; i < seqSize; i++)
@@ -81,6 +90,7 @@ public class RythmGenerator : MonoBehaviour
             currentMin = 30;
         }
 
+        //On prend la difficulté max pour une séquence de cette taille et on l'utilise pour normaliser
         float diffMax = accentuationMax - accentuationMin;
 
         return (accentuationMax - accentuation) / diffMax;
@@ -98,11 +108,11 @@ public class RythmGenerator : MonoBehaviour
         tab[0] = true;
 
         int iSet = 0;
-        for (int i = 0; i < nbTrue-1; i++)
+        for (int i = 0; i < nbTrue - 1; i++)
         {
             iSet = (iSet + Random.Range(0, tab.Length)) % tab.Length;
             int iSearch = 0;
-            while ((tab[iSet] || tab[Mathf.Max(0,iSet-1)]) && iSearch < tab.Length)
+            while ((tab[iSet] || tab[Mathf.Max(0, iSet - 1)]) && iSearch < tab.Length)
             {
                 iSearch++;
                 iSet = (iSet + 1) % tab.Length;
@@ -115,8 +125,7 @@ public class RythmGenerator : MonoBehaviour
     {
         for (int i = 0; i < RythmPlayback.NbSoundSlots; i++)
             RPlayback.setSoundSlot(i, false);
-
-
+        
         bool[] slots = new bool[RythmPlayback.NbSoundSlots];
         bool[] bestSlots = new bool[RythmPlayback.NbSoundSlots];
         bool[] tmpSlots = null;

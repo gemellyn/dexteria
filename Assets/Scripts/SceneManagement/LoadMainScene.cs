@@ -14,12 +14,21 @@ public class LoadMainScene : MonoBehaviour {
         return PlayerName;
     }
 
-    public void loadMainScene()
+    public void loadSerpentScene()
+    {
+        if (PlayerNameText.text.Length > 1) 
+        {
+            PlayerName = PlayerNameText.text;
+            SceneManager.LoadScene(1);
+        }
+    }
+
+    public void loadDanseScene()
     {
         if (PlayerNameText.text.Length > 1)
         {
             PlayerName = PlayerNameText.text;
-            SceneManager.LoadScene(1);
+            SceneManager.LoadScene(2);
         }
     }
 }

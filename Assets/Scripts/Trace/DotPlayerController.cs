@@ -143,7 +143,7 @@ public class DotPlayerController : MonoBehaviour
         
 
         float distanceToCurve = dotManager.distanceToCurve(clickPos);
-        if( ( distanceToCurve > 0.6 || timerEndPath <= 0) && currentDot != null)
+        if( ( distanceToCurve > dotManager.DotPrefab.GetComponent<CircleCollider2D>().radius + 0.01f || timerEndPath <= 0) && currentDot != null)
         {
             //FAAAAAAAAAIL
             transform.GetComponent<DotLevelManager>().nextLevel(false, false);
@@ -183,10 +183,13 @@ public class DotPlayerController : MonoBehaviour
             else
             {
                 float distance = (clickPos - previousTouch).magnitude;
-                dirTouch = Vector3.Lerp(previousDir,(clickPos - previousTouch).normalized,0.8f).normalized;
-                previousDir = dirTouch;
-                if(distance > 0f)
+                if(distance > 0.2)
+                {
+                    dirTouch = Vector3.Slerp(previousDir, (clickPos - previousTouch).normalized, 0.5f).normalized;
+                    previousDir = dirTouch;
                     previousTouch = clickPos;
+                }
+                
             }
             
 
@@ -210,7 +213,7 @@ public class DotPlayerController : MonoBehaviour
                             dotToValidate = dotToValidate.GetComponent<Dot>().NextDot; //On prend le suivant
                             if(dotToValidate != null && dotToValidate == hit.collider.transform) //Si on a touché ce suivant
                             {
-                                if(dotToValidate.GetComponent<Dot>().TouchQuality(dirTouch) > 0.5)
+                                if(dotToValidate.GetComponent<Dot>().TouchQuality(dirTouch) > 0.3)
                                     validate = true;
                             }
                         }

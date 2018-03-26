@@ -71,8 +71,8 @@ public class DotLevelManager : MonoBehaviour {
         {
             numLevel += 10;
             nextLevel(false, false);
-        }
-        */
+        }*/
+        
     }
 
     public void nextLevel(bool reset, bool win)
@@ -131,6 +131,13 @@ public class DotLevelManager : MonoBehaviour {
         float paramLerpTime = (float)LastDiffVars[0];
         float paramLerpComplexity = (float)LastDiffVars[1];
         float paramLerpMean = (paramLerpComplexity + paramLerpTime) / 2.0f;
+
+        //Si on force pour tester
+#if UNITY_EDITOR
+        paramLerpTime = 0.1f;
+        paramLerpComplexity = 0.8f;
+        paramLerpMean = (paramLerpComplexity + paramLerpTime) / 2.0f;
+#endif
 
         //Son
         dotPlayerController.setPitch(Mathf.Lerp(1.0f,3.0f, paramLerpMean));

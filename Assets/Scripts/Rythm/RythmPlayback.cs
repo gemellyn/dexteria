@@ -13,14 +13,20 @@ public class RythmPlayback : MonoBehaviour {
     public bool [] SoundSlots;
     public AudioSource SoundSourceFirst;
     public AudioSource SoundSourceOther;
+    public AudioSource SoundSourceMetronome;
 
     float ElapsedInCurrentTimeSlot;
+    int NumSlotForMetronome = 0;
     int CurrentSoundSlot = 0;
     bool PlayRythm = false;
+    bool WaitForMesureStart = true;
     bool PlayFirst = true;
     bool RythmPlayed = false;
+    public bool PlayMetronome = false;
 
     public Animator DancerAnims;
+
+     
 
 
     void Awake()
@@ -65,6 +71,8 @@ public class RythmPlayback : MonoBehaviour {
         PlayRythm = play;
         PlayFirst = true;
         RythmPlayed = false;
+        WaitForMesureStart = true;
+
     }
 
     public bool isRythmPlayed()
@@ -99,9 +107,44 @@ public class RythmPlayback : MonoBehaviour {
             iCompare++;
         }
 
-        res /= MeasureDuration * getNbActiveSlots();
+        res /= MeasureDuration * (getNbActiveSlots()-1); //-1 car le premier est toujours aligné
 
-        return 1-res;
+        return 1-Mathf.Pow(res,0.5f); //Oon veut plus de détail au début
+    }
+
+    //Calcul du score sur la diff max
+    public float scoreOnMax(List<float> tapTimes)
+    {
+        float res = 0;
+
+        //On genere le resultat ideal
+        List<float> bestTap = new List<float>();
+        float firstSlotIndex = 0;
+        for (int i = 0; i < NbSoundSlots; i++)
+        {
+            if (SoundSlots[i])
+            {
+                if (bestTap.Count == 0)
+                    firstSlotIndex = i;
+                bestTap.Add((i - firstSlotIndex) * SlotDuration);
+            }
+        }
+
+        //On compare les deux listes
+        int iCompare = 0;
+        foreach (float time in bestTap)
+        {
+            if (iCompare >= tapTimes.Count)
+                break;
+            if(Mathf.Abs(time - tapTimes[iCompare]) > res)
+                res = Mathf.Abs(time - tapTimes[iCompare]);
+            iCompare++;
+        }
+
+        res = Mathf.Clamp01(res);
+        //res /= MeasureDuration * (getNbActiveSlots() - 1); //-1 car le premier est toujours aligné
+
+        return 1 - Mathf.Pow(res, 0.5f); //Oon veut plus de détail au début
     }
 
     //Retourne le temps entre le slot activé le plus proche et maintenant
@@ -128,19 +171,34 @@ public class RythmPlayback : MonoBehaviour {
     }
 
     // Update is called once per frame
-    void FixedUpdate () {
-        if (PlayRythm)
+    void Update () {
+        float deltaTime = Time.deltaTime;
+        if (Time.deltaTime > 0.3f)
+            deltaTime = 1 / 60.0f;
+
+        ElapsedInCurrentTimeSlot += deltaTime;
+        if (ElapsedInCurrentTimeSlot >= SlotDuration)
         {
-            ElapsedInCurrentTimeSlot += Time.deltaTime;
-            if(ElapsedInCurrentTimeSlot >= SlotDuration)
+            ElapsedInCurrentTimeSlot -= SlotDuration;
+            if (NumSlotForMetronome % 8 == 0 && PlayMetronome)
             {
-                ElapsedInCurrentTimeSlot -= SlotDuration;
+                SoundSourceMetronome.Play();
+                WaitForMesureStart = false;
+            }
+                
+            NumSlotForMetronome++;
+
+            if (PlayRythm && !WaitForMesureStart)
+            {
                 if (SoundSlots[CurrentSoundSlot])
                 {
                     if(PlayFirst)
                         SoundSourceFirst.Play();
                     else
+                    {
                         SoundSourceOther.Play();
+                    }
+                        
                     DancerAnims.SetInteger("DanceNumber", Random.Range(1, 10));
                     DancerAnims.SetTrigger("EndMove");
                     DancerAnims.SetTrigger("Dance");

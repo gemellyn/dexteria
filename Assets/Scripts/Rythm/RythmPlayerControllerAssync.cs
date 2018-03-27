@@ -5,6 +5,7 @@ using UnityEngine;
 public class RythmPlayerControllerAssync : MonoBehaviour {
 
     public List<float> TapTimes;
+    float TotalTimeLeft = 0;
     bool WasTouching = false;
     float ElapsedSinceLastTouch = 0;
     float ElapsedSinceFirstTouch = 0;
@@ -12,18 +13,24 @@ public class RythmPlayerControllerAssync : MonoBehaviour {
     bool AcquisitionDone = false;
 
     public Animator DancerAnims;
+    bool PlayFirst = true;
+
+    public AudioSource SoundSourceFirst;
+    public AudioSource SoundSourceOther;
 
     // Use this for initialization
     void Awake () {
         TapTimes = new List<float>();
     }
 
-    public void startAcquisition(int nbTapsToGet)
+    public void startAcquisition(int nbTapsToGet,float totalTimeLeft)
     {
         ElapsedSinceFirstTouch = 0;
         TapTimes.Clear();
         NbTapsToGet = nbTapsToGet;
         AcquisitionDone = false;
+        PlayFirst = true;
+        TotalTimeLeft = totalTimeLeft;
     }
 
     public bool isAcquisitionDone()
@@ -32,7 +39,7 @@ public class RythmPlayerControllerAssync : MonoBehaviour {
     }
 	
 	// Update is called once per frame
-	void FixedUpdate () {
+	void Update () {
         ElapsedSinceLastTouch += Time.deltaTime;
         if (TapTimes.Count > 0)
             ElapsedSinceFirstTouch += Time.deltaTime;
@@ -43,11 +50,20 @@ public class RythmPlayerControllerAssync : MonoBehaviour {
 
         //On limite le nombre de touch par seconde
         if (ElapsedSinceLastTouch < 0.001)
-            return;
+            return; 
+
+        if (ElapsedSinceFirstTouch > TotalTimeLeft)
+            AcquisitionDone = true;
 
         if (newTap && !AcquisitionDone)
         {
             TapTimes.Add(ElapsedSinceFirstTouch);
+            /*if (PlayFirst)
+                SoundSourceFirst.Play();
+            else
+                SoundSourceOther.Play();
+
+            PlayFirst = false;*/
             DancerAnims.SetInteger("DanceNumber", Random.Range(1, 10));
             DancerAnims.SetTrigger("EndMove");
             DancerAnims.SetTrigger("Dance");

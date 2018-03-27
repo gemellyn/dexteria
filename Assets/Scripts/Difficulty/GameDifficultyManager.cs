@@ -81,7 +81,9 @@ public class GameDifficultyManager : MonoBehaviour {
     public AnimationCurve [] DifficultyCurvePlaying; //Courbe en jeu, qu'on répète, après l'apprentissage
     public int NbStepsPlaying; //Nombre d'essais pour le jeu (on répète, sert à scaler la courbe)
     private int DiffCurvePlayingChosen = 0; //La courbe de difficulté qu'on utiliser pour la phase après learning
-  
+    private float Exploration = 0.2f; //Exploration appliquée aux paramètres
+
+
     GameDifficultyModel Model;
     GDActivity Activity;
     private string PlayerId = "UnknownPlayer";
@@ -204,8 +206,13 @@ public class GameDifficultyManager : MonoBehaviour {
 
             debugString += "\nDiff: " + Mathf.Floor((float)difficulty * 100) / 100;
 
+            //On rajoute un petit delta en fonction de l'exploration
+            double explo = Random.Range(-Exploration, Exploration);
+
             //On construit le tableau en fonction de l'activité
-            retVals = Activity.getParams(Model, difficulty);
+            retVals = Activity.getParams(Model, difficulty + explo);
+
+            
         }
 
         string parsStr = "";

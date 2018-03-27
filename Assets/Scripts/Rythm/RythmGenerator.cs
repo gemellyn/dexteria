@@ -17,6 +17,9 @@ public class RythmGenerator : MonoBehaviour
     double[] LastDiffVars;
     int NumLevel = 0;
 
+    public int[] Choregraphie; //Pour les anims, suite de 1-10
+
+
     bool GeneratingLevel = false;
 
     public AudioSource SoundFail;
@@ -132,7 +135,10 @@ public class RythmGenerator : MonoBehaviour
     public void newLevel(bool reset, bool win)
     {
         GeneratingLevel = true;
-        
+
+        NbPlayed = 0;
+        AcquisitionStarted = false;
+
         Debug.Log("New Level");
         for (int i = 0; i < RythmPlayback.NbSoundSlots; i++)
             RPlayback.setSoundSlot(i, false);
@@ -161,10 +167,11 @@ public class RythmGenerator : MonoBehaviour
         //wantedComplexity = 0.5f;
 
         //Creation du niveau
+        int nbSlots = 0;
         for (int i = 0; i < 500; i++)
         {
-            int nbSlots = Mathf.RoundToInt(Mathf.Lerp(4, 7, wantedComplexity));
-            nbSlots = Mathf.Clamp(nbSlots, 4, 7);
+            nbSlots = Mathf.RoundToInt(Mathf.Lerp(4, 6, wantedComplexity));
+            nbSlots = Mathf.Clamp(nbSlots, 4, 6);
             makeRandomTab(ref slots, nbSlots);
             float diff = calcRythmComplexity(slots, nbSlots);
 
@@ -186,9 +193,12 @@ public class RythmGenerator : MonoBehaviour
 
         for (int i = 0; i < RythmPlayback.NbSoundSlots; i++)
             RPlayback.setSoundSlot(i, slots[i]);
-        
-        NbPlayed = 1;
-        AcquisitionStarted = false;
+
+        //La choré
+        nbSlots = RPlayback.getNbActiveSlots();
+        Choregraphie = new int[nbSlots];
+        for (int i = 0; i < nbSlots; i++)
+            Choregraphie[i] = Random.Range(1, 11);
 
         StartCoroutine("playNewRythm");
 
@@ -237,22 +247,17 @@ public class RythmGenerator : MonoBehaviour
     {
         if (GeneratingLevel)
             return;
-        //if(Input.GetButton("Fire2"))
-        //newLevel();
-
+       
         if (RPlayback.isRythmPlayed())
         {
+            NbPlayed++;
             RPlayback.playRythm(false);
-            if (NbPlayed < 2)
+            if (NbPlayed == 1)
             {
-                NbPlayed++;
                 StartCoroutine("playNewRythm");
-            }
-            else
-            {
-                RPController.startAcquisition(RPlayback.getNbActiveSlots(), RPlayback.getMeasureDuration()+1);
+                RPController.startAcquisition(RPlayback.getNbActiveSlots(), RPlayback.getMeasureDuration());
                 AcquisitionStarted = true;
-            }
+            }            
         }
 
         if (AcquisitionStarted)
@@ -262,11 +267,18 @@ public class RythmGenerator : MonoBehaviour
                 AcquisitionStarted = false;
                 RPlayback.playRythm(false);
                 LastScore = RPlayback.scoreOnMax(RPController.TapTimes);
-                
-                if (LastScore > 0.5)
+                ScoreText.text = "" + (int)(LastScore * 1000);
+                if (LastScore > 0.6)
+                    SoundWin.Play();
+                else
+                    SoundFail.Play();
+
+                newLevel(false, LastScore > 0.6);
+
+                /*if (LastScore > 0.5)
                     StartCoroutine("playWinAnimAndNewLevel");
                 else
-                    StartCoroutine("playFailAnimAndNewLevel");
+                    StartCoroutine("playFailAnimAndNewLevel");*/
             }
         }
     }

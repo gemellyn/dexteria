@@ -18,9 +18,14 @@ public class RythmPlayerControllerAssync : MonoBehaviour {
     public AudioSource SoundSourceFirst;
     public AudioSource SoundSourceOther;
 
+    int StepChoregraphie = 0;
+
+    RythmGenerator RGenerator;
+
     // Use this for initialization
     void Awake () {
         TapTimes = new List<float>();
+        RGenerator = GetComponent<RythmGenerator>();
     }
 
     public void startAcquisition(int nbTapsToGet,float totalTimeLeft)
@@ -31,6 +36,7 @@ public class RythmPlayerControllerAssync : MonoBehaviour {
         AcquisitionDone = false;
         PlayFirst = true;
         TotalTimeLeft = totalTimeLeft;
+        StepChoregraphie = 0;
     }
 
     public bool isAcquisitionDone()
@@ -64,7 +70,7 @@ public class RythmPlayerControllerAssync : MonoBehaviour {
                 SoundSourceOther.Play();
 
             PlayFirst = false;*/
-            DancerAnims.SetInteger("DanceNumber", Random.Range(1, 10));
+            DancerAnims.SetInteger("DanceNumber", RGenerator.Choregraphie[StepChoregraphie++]);
             DancerAnims.SetTrigger("EndMove");
             DancerAnims.SetTrigger("Dance");
             if (TapTimes.Count >= NbTapsToGet)

@@ -15,6 +15,7 @@ public class RythmPlayback : MonoBehaviour {
     public AudioSource SoundSourceOther;
     public AudioSource SoundSourceMetronome;
 
+   
     float ElapsedInCurrentTimeSlot;
     int NumSlotForMetronome = 0;
     int CurrentSoundSlot = 0;
@@ -25,14 +26,16 @@ public class RythmPlayback : MonoBehaviour {
     public bool PlayMetronome = false;
 
     public Animator DancerAnims;
+    int StepChoregraphie = 0;
 
-     
+    RythmGenerator RGenerator;
 
 
     void Awake()
     {
         SoundSlots = new bool[NbSoundSlots];
         setBPM(60);
+        RGenerator = GetComponent<RythmGenerator>();
     }
 
 
@@ -72,7 +75,7 @@ public class RythmPlayback : MonoBehaviour {
         PlayFirst = true;
         RythmPlayed = false;
         WaitForMesureStart = true;
-
+        StepChoregraphie = 0;
     }
 
     public bool isRythmPlayed()
@@ -141,6 +144,9 @@ public class RythmPlayback : MonoBehaviour {
             iCompare++;
         }
 
+        if (iCompare != bestTap.Count) 
+            res = 1;
+
         res = Mathf.Clamp01(res);
         //res /= MeasureDuration * (getNbActiveSlots() - 1); //-1 car le premier est toujours aligné
 
@@ -199,7 +205,7 @@ public class RythmPlayback : MonoBehaviour {
                         SoundSourceOther.Play();
                     }
                         
-                    DancerAnims.SetInteger("DanceNumber", Random.Range(1, 10));
+                    DancerAnims.SetInteger("DanceNumber", RGenerator.Choregraphie[StepChoregraphie++]);
                     DancerAnims.SetTrigger("EndMove");
                     DancerAnims.SetTrigger("Dance");
                     PlayFirst = false;

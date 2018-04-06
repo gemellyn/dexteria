@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class RythmPlayback : MonoBehaviour {
 
@@ -14,18 +15,24 @@ public class RythmPlayback : MonoBehaviour {
     public AudioSource SoundSourceFirst;
     public AudioSource SoundSourceOther;
     public AudioSource SoundSourceMetronome;
+    
 
    
     float ElapsedInCurrentTimeSlot;
     int NumSlotForMetronome = 0;
     int CurrentSoundSlot = 0;
     bool PlayRythm = false;
-    bool WaitForMesureStart = true;
+    bool WaitForBeat = true;
     bool PlayFirst = true;
     bool RythmPlayed = false;
     public bool PlayMetronome = false;
+    public Animator AnimMetronome;
+    public bool DoAnimMetronome = false;
+    public bool Decompte = false;
+    public int DecompteDuration = 0;
 
     public Animator DancerAnims;
+    public Text TextDecompte;
     int StepChoregraphie = 0;
 
     RythmGenerator RGenerator;
@@ -74,7 +81,7 @@ public class RythmPlayback : MonoBehaviour {
         PlayRythm = play;
         PlayFirst = true;
         RythmPlayed = false;
-        WaitForMesureStart = true;
+        WaitForBeat = true;
         StepChoregraphie = 0;
     }
 
@@ -176,6 +183,19 @@ public class RythmPlayback : MonoBehaviour {
         return 0; 
     }
 
+    public void setAnimMetronome(bool anim)
+    {
+        DoAnimMetronome = anim;
+        
+
+
+    }
+
+    public void showTinyMetronome(bool show)
+    {
+        AnimMetronome.gameObject.SetActive(show);
+    }
+
     // Update is called once per frame
     void Update () {
         float deltaTime = Time.deltaTime;
@@ -189,12 +209,37 @@ public class RythmPlayback : MonoBehaviour {
             if (NumSlotForMetronome % 8 == 0 && PlayMetronome)
             {
                 SoundSourceMetronome.Play();
-                WaitForMesureStart = false;
+                WaitForBeat = false;
             }
-                
+            
+            if (NumSlotForMetronome % 2 == 0 && PlayMetronome)
+            {
+                TextDecompte.transform.parent.parent.gameObject.SetActive(Decompte);
+                if (Decompte && NumSlotForMetronome % 4 == 0)
+                {   
+                    if (DecompteDuration > 0)
+                    {
+                        TextDecompte.text = "" + DecompteDuration;
+                        DecompteDuration--;
+                    }
+                    else
+                    {
+                        TextDecompte.text = "GO";
+                        Decompte = false;
+                        setAnimMetronome(true);
+                    }
+                }
+
+                if(DoAnimMetronome)
+                    AnimMetronome.SetTrigger("Next");
+                else
+                    AnimMetronome.SetTrigger("Idle");
+            }
+
+            
             NumSlotForMetronome++;
 
-            if (PlayRythm && !WaitForMesureStart)
+            if (PlayRythm && !WaitForBeat)
             {
                 if (SoundSlots[CurrentSoundSlot])
                 {
@@ -218,6 +263,8 @@ public class RythmPlayback : MonoBehaviour {
                     CurrentSoundSlot -= NbSoundSlots;
                     PlayFirst = true;
                     RythmPlayed = true;
+
+                    
                 }
             }
         }

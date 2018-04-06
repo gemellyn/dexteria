@@ -34,6 +34,7 @@ public class DotPlayerController : MonoBehaviour
     public void newLevel()
     {
         startWaveDone = false;
+        colBase = Color.HSVToRGB(Random.Range(0.0f, 1.0f), 1, 0.8f);
     }
 
     public int getNbDotsTouched()
@@ -160,7 +161,7 @@ public class DotPlayerController : MonoBehaviour
             matLerp = Mathf.Pow(timerEndPath / timeBetweenDots, 0.33f);*/
 
         colTimeOut = new Color(colBase.grayscale, colBase.grayscale, colBase.grayscale,1);
-
+        
         matDot.color = Color.Lerp(colTimeOut, colBase, matLerp);
         matSlope.color = Color.Lerp(colTimeOut, colBase, matLerp);
 

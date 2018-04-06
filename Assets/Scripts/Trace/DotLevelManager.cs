@@ -50,9 +50,9 @@ public class DotLevelManager : MonoBehaviour {
 
     void Start()
     {
-        GameObject sm = GameObject.Find("SceneManager");
-        if (sm)
-            DiffManager.setPlayerId(sm.GetComponent<LoadMainScene>().getPlayerName());
+        GameObject pm = GameObject.Find("PlayerManager");
+        if (pm)
+            DiffManager.setPlayerId(pm.GetComponent<PlayerManager>().PlayerName);
         DiffManager.setActivity(GameDifficultyManager.GDActivityEnum.TRACE);
         nextLevel(true, false);
         //LastDiffVars = DiffManager.getDiffParams(0);
@@ -107,6 +107,8 @@ public class DotLevelManager : MonoBehaviour {
         }
 
         LastDiffVars = DiffManager.getDiffParams(numLevel);
+        LastDiffVars[0] = Mathf.Clamp01((float)(LastDiffVars[0]));
+        LastDiffVars[1] = Mathf.Clamp01((float)(LastDiffVars[1]));
 
         points = Mathf.Max(0, points);
 

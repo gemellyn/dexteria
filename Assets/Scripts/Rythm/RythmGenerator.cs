@@ -19,6 +19,7 @@ public class RythmGenerator : MonoBehaviour
 
     public int[] Choregraphie; //Pour les anims, suite de 1-10
 
+    public Button ClickToGo;
 
     bool GeneratingLevel = false;
 
@@ -36,9 +37,9 @@ public class RythmGenerator : MonoBehaviour
 
     void Start()
     {
-        GameObject sm = GameObject.Find("SceneManager");
-        if (sm)
-            DiffManager.setPlayerId(sm.GetComponent<LoadMainScene>().getPlayerName());
+        GameObject pm = GameObject.Find("PlayerManager");
+        if (pm)
+            DiffManager.setPlayerId(pm.GetComponent<PlayerManager>().PlayerName);
         DiffManager.setActivity(GameDifficultyManager.GDActivityEnum.SIMON);
         newLevel(false, true);
         ScoreText.text = "";
@@ -73,7 +74,7 @@ public class RythmGenerator : MonoBehaviour
         float accentuationMax = 0;
         float accentuationMin = 0;
         float currentMax = 0;
-        float currentMin = 30;
+        float currentMin = 3000;
         int iMax = -1;
         int iMin = -1;
 
@@ -98,7 +99,7 @@ public class RythmGenerator : MonoBehaviour
             HasBeenMax[iMax] = true;
             HasBeenMin[iMin] = true;
             currentMax = 0;
-            currentMin = 30;
+            currentMin = 3000;
         }
 
         //On prend la difficulté max pour une séquence de cette taille et on l'utilise pour normaliser
@@ -107,10 +108,10 @@ public class RythmGenerator : MonoBehaviour
         return (accentuationMax - accentuation) / diffMax;
     }
 
-    //On met toujours le premier à 1 car on a pas de metronome
+    //On met toujours le premier à 1 car on fait comme si on avait pas de metronome
     //et donc le joueur ne connait pas le début de la mesure
     //pour lui c'est toujours le premier son le début de la mesure
-    //Aussi on autorise pas d'avoir deux slots consécutifs pleins, c'est trop dur à jouer
+    //Aussi on ne s'autorise pas à avoir deux slots consécutifs pleins, c'est trop dur à jouer
     public void makeRandomTab(ref bool[] tab, int nbTrue)
     {
         for (int i = 0; i < tab.Length; i++)
@@ -161,6 +162,7 @@ public class RythmGenerator : MonoBehaviour
 
         Debug.Log("New Level: get diff params");
         LastDiffVars = DiffManager.getDiffParams(NumLevel);
+        LastDiffVars[0] = Mathf.Clamp01((float)(LastDiffVars[0]));
 
         float wantedComplexity = (float)(LastDiffVars[0]);
         float bestSlotsDist = Mathf.Infinity;
@@ -170,8 +172,9 @@ public class RythmGenerator : MonoBehaviour
         int nbSlots = 0;
         for (int i = 0; i < 500; i++)
         {
-            nbSlots = Mathf.RoundToInt(Mathf.Lerp(4, 6, wantedComplexity));
-            nbSlots = Mathf.Clamp(nbSlots, 4, 6);
+            int iNbSlots = Mathf.RoundToInt(Mathf.Lerp(0, 2, wantedComplexity));
+            int[] slotsNb = { 2, 3, 4 }; 
+            nbSlots = slotsNb[iNbSlots];
             makeRandomTab(ref slots, nbSlots);
             float diff = calcRythmComplexity(slots, nbSlots);
 
@@ -198,16 +201,53 @@ public class RythmGenerator : MonoBehaviour
         nbSlots = RPlayback.getNbActiveSlots();
         Choregraphie = new int[nbSlots];
         for (int i = 0; i < nbSlots; i++)
-            Choregraphie[i] = Random.Range(1, 11);
+            Choregraphie[i] = Random.Range(1, 9);
 
-        StartCoroutine("playNewRythm");
+        waitPlayerStartForNewRythm();
 
         GeneratingLevel = false;
     }
 
+    IEnumerator waitBeforeNewRythm()
+    {
+        RPlayback.PlayMetronome = false;
+        yield return new WaitForSeconds(RPlayback.getMeasureDuration() * 1.0f);
+        RPlayback.PlayMetronome = true;
+        StartCoroutine("playNewRythm");
+    }
+
+    void waitPlayerStartForNewRythm()
+    {
+        RPlayback.PlayMetronome = false;
+        RPlayback.showTinyMetronome(false);
+        ClickToGo.gameObject.SetActive(true);
+    }
+
+    public void ClickGoNewRythm()
+    {
+        ClickToGo.gameObject.SetActive(false);
+        RPlayback.PlayMetronome = true;
+        StartCoroutine("playNewRythm");
+    }
+
     IEnumerator playNewRythm()
     {
-        yield return new WaitForSeconds(RPlayback.getMeasureDuration());
+        //Si on va capter le joueur, on demande le décompte
+        if (AcquisitionStarted)
+        {
+            RPlayback.Decompte = true;
+            RPlayback.DecompteDuration = 4;
+            RPlayback.showTinyMetronome(true);
+        }
+        else
+        {
+            RPlayback.setAnimMetronome(false);
+            RPlayback.showTinyMetronome(false);
+        }
+            
+
+
+        yield return new WaitForSeconds(RPlayback.getMeasureDuration()*0.9f);
         RPlayback.playRythm(true);
         RPlayback.PlayMetronome = true;
     }
@@ -254,9 +294,10 @@ public class RythmGenerator : MonoBehaviour
             RPlayback.playRythm(false);
             if (NbPlayed == 1)
             {
+                AcquisitionStarted = true;
                 StartCoroutine("playNewRythm");
                 RPController.startAcquisition(RPlayback.getNbActiveSlots(), RPlayback.getMeasureDuration());
-                AcquisitionStarted = true;
+                
             }            
         }
 

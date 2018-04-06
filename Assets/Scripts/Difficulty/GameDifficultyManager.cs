@@ -215,7 +215,7 @@ public class GameDifficultyManager : MonoBehaviour {
             
         }
 
-        string parsStr = "";
+        string parsStr = "Player : "+PlayerId+"\n";
         for (int i = 0; i < retVals.Length; i++)
             parsStr += i + ":[ " + (Mathf.Floor((float)retVals[i] * 100) / 100) + " ]  ";
         Debug.Log("Giving params "+parsStr);

@@ -292,13 +292,13 @@ public class RythmGenerator : MonoBehaviour
         {
             NbPlayed++;
             RPlayback.playRythm(false);
-            if (NbPlayed == 1)
+            //if (NbPlayed == 1)
             {
                 AcquisitionStarted = true;
                 StartCoroutine("playNewRythm");
                 RPController.startAcquisition(RPlayback.getNbActiveSlots(), RPlayback.getMeasureDuration());
                 
-            }            
+            } 
         }
 
         if (AcquisitionStarted)

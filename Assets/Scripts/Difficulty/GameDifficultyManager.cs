@@ -82,8 +82,7 @@ public class GameDifficultyManager : MonoBehaviour {
     public int NbStepsPlaying; //Nombre d'essais pour le jeu (on répète, sert à scaler la courbe)
     private int DiffCurvePlayingChosen = 0; //La courbe de difficulté qu'on utiliser pour la phase après learning
     private float Exploration = 0.2f; //Exploration appliquée aux paramètres
-
-
+    
     GameDifficultyModel Model;
     GDActivity Activity;
     private string PlayerId = "UnknownPlayer";
